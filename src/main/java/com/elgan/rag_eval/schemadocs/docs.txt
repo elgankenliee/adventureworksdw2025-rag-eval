@@ -1,0 +1,11 @@
+FactInternetSales
+Contains internet sales transactions including product, customer, and order information.
+
+DimCustomer
+Contains customer demographic data including name, location, and customer key.
+
+DimProduct
+Contains product information such as product name, category, and subcategory.
+
+DimDate
+Contains date dimension for OLAP analysis.
