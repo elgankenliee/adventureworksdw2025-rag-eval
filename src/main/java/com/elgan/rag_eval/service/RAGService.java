@@ -9,6 +9,7 @@ import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2Embedding
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.filter.comparison.IsEqualTo;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import org.springframework.stereotype.Service;
 
@@ -23,8 +24,8 @@ import java.util.stream.Collectors;
 public class RAGService {
 
     // ── Tuning knobs ─────────────────────────────────────────────────────────
-    private static final int TABLE_TOP_K    = 5;   // Stage 1: top-N tables
-    private static final int COLUMN_FETCH_K = 50;  // Stage 2: candidates before filter
+    private static final int TABLE_TOP_K      = 5;  // Stage 1: top-N tables
+    private static final int COLUMNS_PER_TABLE = 5;  // Stage 2: top-N columns per table
 
     // ── Embedding infrastructure ──────────────────────────────────────────────
     private final EmbeddingModel embeddingModel = new AllMiniLmL6V2EmbeddingModel();
@@ -141,23 +142,18 @@ public class RAGService {
                 .map(m -> m.embedded().metadata().getString("tableName"))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        // Stage 2: find column candidates, filter to selected tables only
-        List<EmbeddingMatch<TextSegment>> columnCandidates =
-                columnStore.search(EmbeddingSearchRequest.builder()
-                        .queryEmbedding(queryEmbedding)
-                        .maxResults(COLUMN_FETCH_K)
-                        .build()).matches();
-
-        // Group relevant columns by table (preserving table order from Stage 1)
+        // Stage 2: for each selected table, search exactly COLUMNS_PER_TABLE relevant columns
         Map<String, List<String>> columnsByTable = new LinkedHashMap<>();
-        selectedTables.forEach(t -> columnsByTable.put(t, new java.util.ArrayList<>()));
-
-        for (EmbeddingMatch<TextSegment> match : columnCandidates) {
-            String table = match.embedded().metadata().getString("tableName");
-            String column = match.embedded().metadata().getString("columnName");
-            if (columnsByTable.containsKey(table)) {
-                columnsByTable.get(table).add(column);
-            }
+        for (String tableName : selectedTables) {
+            List<String> cols = columnStore.search(EmbeddingSearchRequest.builder()
+                            .queryEmbedding(queryEmbedding)
+                            .maxResults(COLUMNS_PER_TABLE)
+                            .filter(new IsEqualTo("tableName", tableName))
+                            .build()).matches()
+                    .stream()
+                    .map(m -> m.embedded().metadata().getString("columnName"))
+                    .collect(Collectors.toList());
+            columnsByTable.put(tableName, cols);
         }
 
         return buildContext(tableMatches, columnsByTable);
@@ -175,10 +171,15 @@ public class RAGService {
         for (EmbeddingMatch<TextSegment> tableMatch : tableMatches) {
             String tableName = tableMatch.embedded().metadata().getString("tableName");
 
-            // Table header (description line from its embedding text)
-            ctx.append(tableMatch.embedded().text().strip()).append("\n");
+            // Include table name, description, and PKs — but NOT the full Columns/FK list
+            // (those were only in the embedding text to boost retrieval quality)
+            String tableHeader = java.util.Arrays.stream(
+                            tableMatch.embedded().text().strip().split("\n"))
+                    .filter(line -> !line.startsWith("Columns:"))
+                    .collect(Collectors.joining("\n"));
+            ctx.append(tableHeader).append("\n");
 
-            // Relevant columns for this table
+            // Only columns that Stage 2 found relevant
             List<String> cols = columnsByTable.getOrDefault(tableName, List.of());
             if (!cols.isEmpty()) {
                 ctx.append("Relevant Columns: ").append(String.join(", ", cols)).append("\n");
