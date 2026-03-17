@@ -1,0 +1,42 @@
+excluded-tables:
+  - DatabaseLog
+  - sysdiagrams
+  - AdventureWorksDWBuildVersion
+
+table-descriptions:
+  # Fact Tables
+  FactInternetSales: "Stores individual internet (direct-to-consumer) customer purchase transactions and orders. Each row represents a transaction made by a customer. Use this table to count customer transactions, purchases, order frequency, and sales activity. Keywords: transactions, orders, purchases, customer activity, sales"
+  FactResellerSales: "Stores sales transactions made through resellers (indirect channel, not direct customers). Each row represents a reseller order, not individual customer purchases. Use for reseller/channel sales analysis. Keywords: reseller sales, indirect sales, distributor orders"
+  FactCallCenter: "Records daily call center shift metrics such as number of operators, calls received, automatic responses, orders placed, issues raised, and service grade. Useful for call center performance analysis."
+  FactFinance: "Stores financial data by account, date, organization, department group, and scenario. Contains financial amounts used for budgeting, actual vs. forecast analysis, and variance reporting."
+  FactProductInventory: "Tracks daily product inventory movements including units in, units out, and closing units balance. Use this table to analyze stock levels and inventory trends."
+  FactSalesQuota: "Contains quarterly sales quota targets assigned to employees. Used to compare actual sales performance against targets."
+  FactCurrencyRate: "Stores daily average and end-of-day currency exchange rates by currency. Use for multi-currency financial analysis and conversion."
+  FactSurveyResponse: "Records customer survey responses linked to product categories and subcategories. Useful for customer preference and satisfaction analysis."
+  FactInternetSalesReason: "Bridge table linking customer transactions (orders) to the reasons why a purchase was made (e.g., price, quality, promotion). Use to analyze why customers made purchases. Keywords: purchase reason, why bought, motivation"
+  FactAdditionalInternationalProductDescription: "Stores product descriptions in additional international languages beyond those in DimProduct. Join with DimProduct on ProductKey."
+  NewFactCurrencyRate: "Staging or alternate version of currency rate data with raw currency ID strings before dimension key resolution."
+
+  # Dimension Tables
+  DimCustomer: "Customer dimension containing customer identity and demographic details such as first name, last name, gender, income, and location. Use this table to identify customers, retrieve customer names, and segment or filter customers in queries. Keywords: customer, person, buyer, name"
+  DimProduct: "Product dimension with product name, category/subcategory link, cost, list price, color, size, weight, product line, class, style, and lifecycle dates. Use to join with fact tables for product-level analysis."
+  DimDate: "Date dimension providing calendar and fiscal attributes for any date key. Includes day, week, month, quarter, year, and semester breakdowns in both calendar and fiscal contexts."
+  DimEmployee: "Employee dimension with personal details, role, department, hire date, salary, and sales person flag. Also supports organizational hierarchy via ParentEmployeeKey."
+  DimReseller: "Reseller (indirect sales partner) dimension including business type, geography, annual revenue, number of employees, and order frequency. Use in reseller sales analysis."
+  DimGeography: "Geographic dimension with city, state/province, country, and postal code. Used to analyze sales or customers by location."
+  DimSalesTerritory: "Sales territory dimension defining regions, countries, and groups for sales performance reporting."
+  DimPromotion: "Promotion dimension with promotion name, type, category, discount percentage, and validity dates. Use to analyze promotion effectiveness."
+  DimCurrency: "Currency dimension with currency code and name. Used to look up currency details in financial and sales fact tables."
+  DimAccount: "Chart of accounts dimension used in financial reporting. Contains account type, description, and hierarchical parent-child account structure."
+  DimOrganization: "Organizational unit hierarchy used in financial reporting. Links to currency and supports parent-child org structure."
+  DimDepartmentGroup: "Department group hierarchy dimension used for grouping departments in financial analysis."
+  DimScenario: "Scenario dimension (e.g., Actual, Budget, Forecast) used in financial reporting via FactFinance."
+  DimProductCategory: "Top-level product category dimension (e.g., Bikes, Accessories). Links to DimProductSubcategory."
+  DimProductSubcategory: "Product subcategory dimension (e.g., Road Bikes, Helmets) within a product category. Links to DimProduct."
+  DimSalesReason: "Sales reason dimension listing reasons why customers made a purchase (e.g., Price, Quality, Manufacturer). Used with FactInternetSalesReason."
+
+  # Other Tables
+  ProspectiveBuyer: "Contains demographic data for prospective customers who have not yet made a purchase. Used for targeting and marketing analysis."
+  AdventureWorksDWBuildVersion: "Metadata table storing the database version and build date. Not used for business queries."
+  DatabaseLog: "System audit log recording DDL events executed against the database. Not used for business queries."
+  sysdiagrams: "Internal SQL Server system table for storing database diagrams. Not used for business queries."

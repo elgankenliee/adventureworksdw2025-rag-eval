@@ -1,17 +1,14 @@
 package com.elgan.rag_eval.service;
 
 import com.elgan.rag_eval.model.ChatResponse;
-import com.elgan.rag_eval.model.RAGService;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.output.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -30,7 +27,17 @@ public class ChatService {
         String context = ragService.retrieve(message);
 
         String prompt = """
-        You are an assistant that answers questions about data warehouse.
+        You are an assistant that answers questions about a data warehouse.
+        
+        Generate a valid single-line T-SQL (Microsoft SQL Server) query only. Output must contain no line breaks, no formatting, no comments, no explanations, and no markdown.
+        
+        Use strictly and exclusively the tables and columns provided in the context. Do not infer, guess, or create any schema elements.
+        
+        Strictly follow the user’s request. Do not add extra columns, calculations, or aggregations that are not explicitly required.
+        
+        All non-aggregated columns in the SELECT clause must be included in the GROUP BY clause.
+        
+        If any required table or column is not present in the context, output exactly: INSUFFICIENT_SCHEMA.
 
         Context:
         %s
